@@ -5,15 +5,13 @@ import json
 import time
 from microdot.cors import CORS
 from utils import Utils
-
+PIN_LED=18
 
 #Configurar de api rest
 app = Microdot()
 CORS(app, allowed_origins="*", allow_credentials=True)
-#LED_INDICADOR de conexion activa 
-PIN_LED=18
 # 🔌 Configurar UART (TX = GP0, RX = GP1)
-uart = UART(0, baudrate=9600, tx=Pin(16), rx=Pin(17))
+uart = UART(0, baudrate=38400, tx=Pin(16), rx=Pin(17))
 wifi = Utils(
     ssid="luis",
     password="luis123!",

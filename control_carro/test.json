@@ -1,0 +1,108 @@
+{
+  "Carro_1": {
+    "Paso_1": {
+      "Movimiento": {
+        "distancia_mm": 0,
+        "velocidad_mm_s": 50,
+        "radio_mm": "inf"
+      },
+      "Brazo": {
+        "angulo0_grados": -90,
+        "angulo1_grados": -90,
+        "angulo2_grados": -90,
+        "t_ser": 1.0
+      }
+    },
+    "Paso_2": {
+      "Movimiento": {
+        "distancia_mm": 0,
+        "velocidad_mm_s": 50,
+        "radio_mm": "inf"
+      },
+      "Brazo": {
+        "angulo0_grados": 270,
+        "angulo1_grados": 45,
+        "angulo2_grados": 120,
+        "t_ser": 2.0
+      }
+    },
+    "Paso_3": {
+      "Movimiento": {
+        "distancia_mm": 0,
+        "velocidad_mm_s": 50,
+        "radio_mm": "inf"
+      },
+      "Brazo": {
+        "angulo0_grados": 0,
+        "angulo1_grados": 0,
+        "angulo2_grados": 0,
+        "t_ser": 2.0
+      }
+    },
+    "Paso_4": {
+      "Movimiento": {
+        "distancia_mm": 0,
+        "velocidad_mm_s": 50,
+        "radio_mm": "inf"
+      },
+      "Brazo": {
+        "angulo0_grados": 270,
+        "angulo1_grados": 0,
+        "angulo2_grados": 90,
+        "t_ser": 2.0
+      }
+    },
+    "Paso_5": {
+      "Movimiento": {
+        "distancia_mm": 0,
+        "velocidad_mm_s": 50,
+        "radio_mm": "inf"
+      },
+      "Brazo": {
+        "angulo0_grados": 270,
+        "angulo1_grados": 90,
+        "angulo2_grados": 90,
+        "t_ser": 2.0
+      }
+    },
+    "Paso_6": {
+      "Movimiento": {
+        "distancia_mm": 0,
+        "velocidad_mm_s": 50,
+        "radio_mm": "inf"
+      },
+      "Brazo": {
+        "angulo0_grados": 270,
+        "angulo1_grados": 45,
+        "angulo2_grados": 120,
+        "t_ser": 2.0
+      }
+    },
+    "Paso_7": {
+      "Movimiento": {
+        "distancia_mm": 0,
+        "velocidad_mm_s": 50,
+        "radio_mm": "inf"
+      },
+      "Brazo": {
+        "angulo0_grados": 270,
+        "angulo1_grados": 90,
+        "angulo2_grados": 90,
+        "t_ser": 2.0
+      }
+    },
+    "Paso_8": {
+      "Movimiento": {
+        "distancia_mm": 0,
+        "velocidad_mm_s": 50,
+        "radio_mm": "inf"
+      },
+      "Brazo": {
+        "angulo0_grados": 90,
+        "angulo1_grados": 90,
+        "angulo2_grados": 90,
+        "t_ser": 2.0
+      }
+    }
+  }
+}

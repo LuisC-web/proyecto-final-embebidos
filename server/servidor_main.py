@@ -3,20 +3,25 @@ from microdot import Microdot
 import network
 import json
 import time
-from phew import connect_to_wifi
 from microdot.cors import CORS
-#Credenciales
-ssid="luis"
-password="luis123!"
+from utils import Utils
+
+
 #Configurar de api rest
 app = Microdot()
 CORS(app, allowed_origins="*", allow_credentials=True)
+#LED_INDICADOR de conexion activa 
+PIN_LED=18
 # 🔌 Configurar UART (TX = GP0, RX = GP1)
 uart = UART(0, baudrate=9600, tx=Pin(16), rx=Pin(17))
-ip = connect_to_wifi("luis", "luis123!")
-if not ip:
-    raise RuntimeError("❌ No se pudo conectar a WiFi")
-print("✅ Conectado a WiFi. IP:", ip)
+wifi = Utils(
+    ssid="luis",
+    password="luis123!",
+    my_ip="192.168.2.4", 
+    host="192.168.2.1"
+)
+ip=wifi.get_ip()
+
 # ✅ GET /api/status
 @app.get("/api/status")
 def status_handler(request):
@@ -46,5 +51,9 @@ def mover_handler(request):
         return "Internal server error", 500
 
 # 🟢 Ejecutar servidor
+led=Pin(PIN_LED, Pin.OUT)
+led.value(1)
+uart.write(json.dumps({ip:ip,"accion":"ip"}).encode("utf-8") )  
 print("🚀 Servidor HTTP escuchando en /api/*")
 app.run(host=ip, port=5000, debug=True, ssl=None)
+

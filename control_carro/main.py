@@ -2,14 +2,13 @@ import json
 import time
 from motor_controller import MotorController
 from robot_arm_controller import BrazoRobotico
-from carro_wifi_module import CarroWiFi
 from my_oled_lib import MyOLED
 from utils import UtilsProject
 # --- Configuración de Pines I2C para la OLED ---
 # Define los pines SDA y SCL que vas a usar.
 # Para GP2 y GP3, puedes dejarlo así:
-OLED_SDA_PIN = 2
-OLED_SCL_PIN = 3 
+OLED_SDA_PIN = 26
+OLED_SCL_PIN = 27
 # Si quisieras usar otros pines, por ejemplo, GP4 y GP5, lo harías así:
 # OLED_SDA_PIN = 4
 # OLED_SCL_PIN = 5
@@ -28,7 +27,7 @@ TEST_JSON = json.dumps({
     }
 })
 # Inicializa la pantalla OLED pasando los pines que has definido.
-#oled = MyOLED(sda_pin=OLED_SDA_PIN, scl_pin=OLED_SCL_PIN)
+oled = MyOLED(sda_pin=OLED_SDA_PIN, scl_pin=OLED_SCL_PIN)
 
 #-----------------
 
@@ -39,48 +38,80 @@ if __name__ == "__main__":
     # Inicializar hardware
     motors_controller = MotorController()
     arm_controller = BrazoRobotico()
-    tiempo_ultima_actualizacion = time.ticks_ms()
-    
+    functions = UtilsProject()
     while modo_prueba:
         print("🚀 MODO PRUEBA ACTIVADO: ejecutando TEST_JSON")
         oled.write_text("MODO PRUEBA", 0, 0)
-        pasos_prueba = parsear_comando(TEST_JSON) 
-        ahora = time.ticks_ms()
-        if time.ticks_diff(ahora, tiempo_ultima_actualizacion) > 5000:
-            voltaje = utilidad.verificar_bateria()
-            print(f"🔋 Voltaje: {voltaje}V")
-            oled.write_text(f"Bat: {voltaje}V", 0, 20)
-            tiempo_ultima_actualizacion = ahora
+        pasos_prueba = functions.parsear_comando(TEST_JSON) 
         if pasos_prueba:
             for i, cmd in enumerate(pasos_prueba, start=1):
                 print(f"[Prueba] Paso {i}: {cmd}")
                 # Movimiento de brazo si aplica
                 if cmd.get("angulos"):
-                    brazo_robotico.mover_brazo(cmd["angulos"], cmd.get("t_ser", 1.0))
+                    arm_controller.mover_brazo(cmd["angulos"], cmd.get("t_ser", 1.0))
                     time.sleep(cmd.get("t_ser", 1.0))
                 # Movimiento del rover: convertir mm a cm
                 distancia_cm = cmd["distancia_abs"] / 10.0
                 if cmd["tipo"] == "recto":
-                    controlador_rover.mover_adelante(distancia_cm)
+                    motors_controller.mover_adelante(distancia_cm)
                 else:
                     if cmd["direccion_giro"] == "izquierda":
-                        controlador_rover.girar_izquierda(cmd["angulo"])
+                        motors_controller.girar_izquierda(cmd["angulo"])
                     else:
-                        controlador_rover.girar_derecha(cmd["angulo"])
-                    controlador_rover.mover_adelante(distancia_cm)
-            controlador_rover.detener()
+                        motors_controller.girar_derecha(cmd["angulo"])
+                    motors_controller.mover_adelante(distancia_cm)
+            motors_controller.detener()
             oled.write_text("Fin prueba", 0, 20)
             print("✅ Modo prueba completado")
         else:
             print("ERROR: parsear_comando TEST_JSON devolvió None")
-    functions = UtilsProject()
+    # Buffer de comandos (cola FIFO)
+    cola_comandos = []
 
+    while True:
+        oled.write_text("Proyecto final:3", 0, 0)
 
-    while True: # Bucle infinito para escuchar continuamente
+        # 📥 Leer mensaje UART si existe
         msg = functions.recibir_uart()
         if msg:
-            functions.parsear_json_uart(msg, motors_controller, arm_controller)
-        
-        
-        
- 
+            accion = msg.get("accion")
+            # 🛑 Detener todo: vaciar buffer y cortar movimiento
+            if accion == "detener":
+                cola_comandos.clear()
+                motors_controller.detener()
+                if hasattr(arm_controller, "detener"):
+                    try:
+                        arm_controller.detener()
+                    except Exception:
+                        pass
+                try:
+                    oled.write_text("⚠️ DETENER!", 0, 20)
+                except Exception as e:
+                    print("OLED error (detener):", e)
+                # Saltar al inicio del bucle
+                time.sleep(0.05)
+                continue
+            
+            # Si no es detener, agregar al buffer
+            cola_comandos.append(msg)
+
+        # 🔄 Procesar próximo comando si existe
+        if cola_comandos:
+            prox = cola_comandos.pop(0)
+            # Mostrar en OLED de forma segura
+            try:
+                oled.write_text("Ejecutando:", 0, 10)
+                oled.write_text(prox.get("accion", ""), 0, 20)
+                if prox.get(prox.get("ip")):
+                   oled.write_text(prox.get("ip ", ""), 0, 20) 
+            except Exception as e:
+                print("OLED error (ejecución):", e)
+            
+            # Ejecutar comando con seguridad
+            try:
+                functions.parsear_json_uart(prox, motors_controller, arm_controller)
+            except Exception as e:
+                print("Error ejecutando comando:", prox, e)
+
+        # Pequeña pausa para no saturar el CPU
+        time.sleep(0.05)

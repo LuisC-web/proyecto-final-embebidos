@@ -7,7 +7,7 @@ export class AutoServices {
         accion: "mover",
         movimiento: {
           direccion: "adelante",
-          distancia_cm: 30,
+          distancia_cm: 20,
         },
       });
       return data.ok;
@@ -34,7 +34,7 @@ export class AutoServices {
       const { data } = await api.post("/api/mover", {
         accion: "girar",
         direccion: "izquierda",
-        angulo: 90,
+        angulo: 45,
       });
       return data.ok;
     } catch (error) {
@@ -47,6 +47,16 @@ export class AutoServices {
         accion: "girar",
         direccion: "derecha",
         angulo: 45,
+      });
+      return data.ok;
+    } catch (error) {
+      console.log("Se produjo un error", error);
+    }
+  }
+  static async detener() {
+    try {
+      const { data } = await api.post("/api/mover", {
+        accion: "detener",
       });
       return data.ok;
     } catch (error) {

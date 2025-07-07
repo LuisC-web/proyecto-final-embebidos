@@ -3,6 +3,11 @@ import {
   ArrowBigLeft,
   ArrowBigRight,
   ArrowBigUp,
+  MoveDownLeft,
+  MoveDownRight,
+  MoveUpLeft,
+  MoveUpRight,
+  RouteOff,
 } from "lucide-react";
 import { useRef } from "react";
 import { AutoServices } from "../services/AutoServices";
@@ -23,27 +28,57 @@ function MovimientoCarro() {
 
   return (
     <div>
-      <div className="grid grid-cols-3 gap-4 grid-rows-2 text-white">
+      <div className="grid grid-cols-3 gap-4 grid-rows-3 text-white">
+        <MoveUpLeft
+          className="size-10 col-start-1 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+          onMouseDown={() => iniciarMovimiento(AutoServices.avanzar_izquierda)}
+          onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+          onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+        />
+        <MoveUpRight
+          className="size-10 col-start-3 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+          onMouseDown={() => iniciarMovimiento(AutoServices.avanzar_derecha)}
+          onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+          onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+        />
+        <MoveDownLeft
+          className="size-10 col-start-1 row-start-3 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+          onMouseDown={() =>
+            iniciarMovimiento(AutoServices.retroceder_izquierda)
+          }
+          onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+          onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+        />
+        <MoveDownRight
+          className="size-10 col-start-3 row-start-3  cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+          onMouseDown={() => iniciarMovimiento(AutoServices.retroceder_derecha)}
+          onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+          onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+        />
         <ArrowBigUp
-          className="size-10 col-start-2 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+          className="size-10 col-start-2 row-start-1 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
           onMouseDown={() => iniciarMovimiento(AutoServices.mover_adelante)}
           onMouseUp={() => detenerMovimiento(AutoServices.detener)}
           onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
         />
-        <ArrowBigLeft
-          className="size-10 col-start-1 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
-          onMouseDown={() => iniciarMovimiento(AutoServices.girar_derecha)}
-          onMouseUp={() => detenerMovimiento(AutoServices.detener)}
-          onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+        <RouteOff
+          className="size-10 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+          onClick={async () => AutoServices.detener()}
         />
-        <ArrowBigRight
-          className="size-10 col-start-3 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+        <ArrowBigLeft
+          className="size-10 col-start-1 row-start-2 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
           onMouseDown={() => iniciarMovimiento(AutoServices.girar_izquierda)}
           onMouseUp={() => detenerMovimiento(AutoServices.detener)}
           onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
         />
+        <ArrowBigRight
+          className="size-10 col-start-3 row-start-2 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+          onMouseDown={() => iniciarMovimiento(AutoServices.girar_derecha)}
+          onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+          onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+        />
         <ArrowBigDown
-          className="size-10 col-start-2 row-start-2 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+          className="size-10 col-start-2 row-start-3 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
           onMouseDown={() => iniciarMovimiento(AutoServices.mover_atras)}
           onMouseUp={() => detenerMovimiento(AutoServices.detener)}
           onMouseLeave={() => detenerMovimiento(AutoServices.detener)}

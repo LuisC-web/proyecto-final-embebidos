@@ -51,7 +51,7 @@ def mover_handler(request):
 # 🟢 Ejecutar servidor
 led=Pin(PIN_LED, Pin.OUT)
 led.value(1)
-uart.write(json.dumps({ip:ip,"accion":"ip"}).encode("utf-8") )  
+uart.write(json.dumps({"ip":ip,"accion":"ip"}).encode("utf-8") )  
 print("🚀 Servidor HTTP escuchando en /api/*")
 app.run(host=ip, port=5000, debug=True, ssl=None)
 

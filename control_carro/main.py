@@ -38,6 +38,7 @@ if __name__ == "__main__":
     # Inicializar hardware
     motors_controller = MotorController()
     arm_controller = BrazoRobotico()
+    tiempo_ultima_actualizacion = time.ticks_ms()
     functions = UtilsProject()
     while modo_prueba:
         print("🚀 MODO PRUEBA ACTIVADO: ejecutando TEST_JSON")
@@ -67,12 +68,29 @@ if __name__ == "__main__":
             print("ERROR: parsear_comando TEST_JSON devolvió None")
     # Buffer de comandos (cola FIFO)
     cola_comandos = []
+    DIST_CRITICA = 10
 
     while True:
         oled.write_text("Proyecto final:3", 0, 0)
 
         # 📥 Leer mensaje UART si existe
         msg = functions.recibir_uart()
+        ultra_sonido_distancia=functions.medir_distancia_cm()
+        
+        if ultra_sonido_distancia is not None:
+            if ultra_sonido_distancia < DIST_CRITICA:
+                # Gira a la derecha hasta que esté a salvo
+                motors_controller.girar_derecha(30)  # ajusta velocidad/ángulo
+                try:
+                    oled.write_text(f"🚨 Obstáculo {dist:.1f}cm", 0, 20)
+                except:
+                    pass
+                time.sleep(0.1)
+                continue  # Salta al próximo ciclo
+            else:
+                motors_controller.detener()
+            
+        
         if msg:
             accion = msg.get("accion")
             # 🛑 Detener todo: vaciar buffer y cortar movimiento
@@ -102,8 +120,8 @@ if __name__ == "__main__":
             try:
                 oled.write_text("Ejecutando:", 0, 10)
                 oled.write_text(prox.get("accion", ""), 0, 20)
-                if prox.get(prox.get("ip")):
-                   oled.write_text(prox.get("ip ", ""), 0, 20) 
+                if prox.get("ip"):
+                   oled.write_text("ip: "+prox.get("ip", ""), 0, 50) 
             except Exception as e:
                 print("OLED error (ejecución):", e)
             

@@ -1,51 +1,48 @@
 # carro_wifi_module.py
 
-import machine
-import time
 import network
-import socket
-import json
+import time
+import machine
 
 class Utils:
-    def __init__(self, ssid, password, my_ip,host):
- 
-        # WiFi
+    def __init__(self, ssid, password):
         self.ssid = ssid
         self.password = password
-        self.host = host
-        self.my_ip = my_ip
         self.wlan = network.WLAN(network.STA_IF)
-        self.wlan.ifconfig((self.my_ip, '255.255.255.0', self.host, '8.8.8.8'))
-
-
-        # Conectar al iniciar
+        self.wlan.active(True)
         self.connect_wifi()
 
-    def connect_wifi(self):
-        self.wlan.active(True)
-        if not self.wlan.isconnected():
-            print("Conectando a WiFi...")
-            self.wlan.connect(self.ssid, self.password)
-            timeout = 10
-            start = time.time()
-            while not self.wlan.isconnected():
-                if time.time() - start > timeout:
-                    print("❌ Timeout conectando WiFi")
-                    break
-                time.sleep(1)
+    def connect_wifi(self, timeout=10):
         if self.wlan.isconnected():
-            print("✅ WiFi conectado:", self.wlan.ifconfig())
-        else:
-            print("❌ No conectado a WiFi")
+            return True
+
+        print("🔌 Conectando a Wi‑Fi…")
+        self.wlan.active(False)
+        time.sleep(0.5)
+        self.wlan.active(True)
+        self.wlan.connect(self.ssid, self.password)
+
+        start = time.ticks_ms()
+        while not self.wlan.isconnected():
+            if time.ticks_diff(time.ticks_ms(), start) > timeout * 1000:
+                print(f"❌ Timeout de {timeout}s. Reintentando…")
+                return False
+            time.sleep(1)
+        self.my_ip = self.wlan.ifconfig()[0]
+        print(f"✅ Conectado: IP = {self.my_ip}")
+        return True
 
     def ensure_wifi(self):
-        if not self.wlan.isconnected():
-            print("WiFi desconectado, intentando reconectar...")
-            self.connect_wifi()
+        while not self.wlan.isconnected():
+            print("🔄 Wi‑Fi desconectado. Reintentando conexión...")
+            if not self.connect_wifi():
+                time.sleep(5)  # espera antes de reintentar
+            else:
+                break
+        return True
+
     def get_ip(self):
-        return self.my_ip
-            
-
-
-
+        if self.wlan.isconnected():
+            return getattr(self, 'my_ip', self.wlan.ifconfig()[0])
+        return None
 

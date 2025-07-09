@@ -121,7 +121,7 @@ if __name__ == "__main__":
                 oled.write_text("Ejecutando:", 0, 10)
                 oled.write_text(prox.get("accion", ""), 0, 20)
                 if prox.get("ip"):
-                   oled.write_text("ip: "+prox.get("ip", ""), 0, 50) 
+                   oled.write_text(prox.get("ip", ""), 0, 50) 
             except Exception as e:
                 print("OLED error (ejecución):", e)
             

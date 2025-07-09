@@ -4,119 +4,21 @@ import network
 import socket
 import json
 import time
-from machine import UART, Pin
-
-class WifiAPI:
-    def __init__(self, ssid, password, port=80, uart_tx=16, uart_rx=17, baudrate=9600):
-        self.ssid = ssid
-        self.password = password
-        self.port = port
-
-        # Configurar UART
-        self.uart = UART(0, baudrate=baudrate, tx=Pin(uart_tx), rx=Pin(uart_rx))
-        self.uart_buffer = b""
-        # Configurar WiFi en modo cliente (STA)
-        self.wlan = network.WLAN(network.STA_IF)
-        self.wlan.active(True)
-
-        self.connect_wifi()  # conexión por DHCP
-
-        # Servidor HTTP
-        self.server_socket = socket.socket()
-        self.server_socket.bind(('0.0.0.0', self.port))
-        self.server_socket.listen(1)
-        print(f"🚀 API escuchando en puerto {self.port}...")
-
-        # Endpoints registrados (ruta: función)
-        self.endpoints = {
-            "GET /api/status": self.api_status,
-            "POST /api/mover": self.api_mover
-        }
-
-    def connect_wifi(self):
-        print("📡 Conectando a WiFi...")
-        self.wlan.connect(self.ssid, self.password)
-
-        intento = 0
-        while not self.wlan.isconnected() and intento < 20:
-            print(f"⏳ Intentando conectar... ({intento})")
-            time.sleep(1)
-            intento += 1
-
-        if self.wlan.isconnected():
-            print("✅ Conectado a WiFi")
-            print("🌐 IP:", self.wlan.ifconfig()[0])
-        else:
-            print("❌ No se pudo conectar al WiFi.")
-            raise RuntimeError("Fallo de conexión WiFi")
-
-    def manejar_peticion(self, request):
-        try:
-            headers = request.split("\r\n")
-            metodo, ruta, _ = headers[0].split(" ")
-            clave = f"{metodo} {ruta}"
-
-            if clave in self.endpoints:
-                return self.endpoints[clave](request)
-
-            return "HTTP/1.1 404 Not Found\r\n\r\n"
-
-        except Exception as e:
-            print("❌ Error en petición:", e)
-            return "HTTP/1.1 500 Internal Server Error\r\n\r\n"
-
-    def api_status(self, _request):
-        estado = {
-            "status": "ok",
-            "ip": self.wlan.ifconfig()[0],
-            "ssid": self.ssid
-        }
-        return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + json.dumps(estado)
-
-    def api_mover(self, request):
-        try:
-            body = request.split("\r\n\r\n")[1]
-            data = json.loads(body)
-
-            direccion = data.get("direccion")
-            distancia = data.get("distancia", 10)
-
-            comando = json.dumps({
-                "accion": "mover",
-                "direccion": direccion,
-                "distancia": distancia
-            })
-
-            self.uart.write(comando + "\n")
-            print("📤 Enviado por UART:", comando)
-
-            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + json.dumps({"status": "ok"})
-        except Exception as e:
-            print("❌ Error en /api/mover:", e)
-            return "HTTP/1.1 400 Bad Request\r\n\r\n"
-
-    def servir(self):
-        while True:
-            cl, addr = self.server_socket.accept()
-            try:
-                request = cl.recv(1024).decode()
-                print(f"📥 Petición de {addr[0]}:\n{request}")
-                respuesta = self.manejar_peticion(request)
-                cl.send(respuesta)
-            except Exception as e:
-                print("❌ Error en conexión:", e)
-            finally:
-                cl.close()
-
+from machine import UART, Pin,time_pulse_us
 
 class UtilsProject:
-    def __init__(self, uart_id=0, baudrate=9600, tx_pin=16, rx_pin=17,timeout=100, timeout_char=10):
+    def __init__(self, uart_id=0, baudrate=115200, tx_pin=16, rx_pin=17,timeout=100, timeout_char=10,trig_pin=10, echo_pin=11,
+                 dist_min_cm=20):
         """
         Inicializa el UART y parámetros básicos para comunicación serial.
         """
         self.uart = UART(uart_id, baudrate=baudrate, tx=tx_pin, rx=rx_pin,timeout=timeout, timeout_char=timeout_char)
         self.uart_buffer = b""
         self.uart.read()
+         # Ultrasonido
+        self.TRIG = Pin(trig_pin, Pin.OUT)
+        self.ECHO = Pin(echo_pin, Pin.IN)
+        self.dist_min = dist_min_cm
 
     def enviar_uart(self, mensaje):
         """
@@ -263,7 +165,71 @@ class UtilsProject:
             tiempo = received.get("tiempo_s", 1.0)
             brazo_robotico.mover_brazo(angulos, tiempo)
 
-        elif received.get("accion") == "detener":
-            motor_controller.detener()
+        elif received.get("accion") == "ir_a":
+            x0 = received.get("coor_ix", 0)
+            y0 = received.get("coor_iy", 0)
+            xf = received.get("coor_fx", x0)
+            yf = received.get("coor_fy", y0)
+            n = received.get("n", 1)
 
+            dxs, dys = self.bezier(x0, y0, xf, yf, n)
+            for dx, dy in zip(dxs, dys):
+                # cada segmento es relativo
+                if dx > 0:
+                    motor_controller.mover_adelante(abs(dx))
+                elif dx < 0:
+                    motor_controller.mover_atras(abs(dx))
+                if dy > 0:
+                    motor_controller.girar_izquierda(abs(dy))
+                elif dy < 0:
+                    motor_controller.girar_derecha(abs(dy))
+
+    def medir_distancia_cm(self):
+        # Referencia: SunFounder Pico W HC-SR04 :contentReference[oaicite:1]{index=1}
+        self.TRIG.low()
+        time.sleep_us(2)
+        self.TRIG.high()
+        time.sleep_us(10)
+        self.TRIG.low()
+        dur = time_pulse_us(self.ECHO, 1, 30000)
+        # velocidad sonido ≈29.1 μs/cm. Divide por 2 (ida+vuelta)
+        return (dur / 2) / 29.1
+    def bezier(self, coor_ix, coor_iy, coor_fx, coor_fy, n):
+        ptos_x = []; ptos_y = []
+        dist_x = []; dist_y = []
+        pc_x = 0; pc_y = 0
+
+        if coor_ix == 200:       pc_x = 180
+        if coor_ix == -70:       pc_x = -190
+        if coor_iy == -70:       pc_y = -200
+        if coor_iy == -270:      pc_y = -210
+
+        t_values = [i / 10 for i in range(0, 11)]
+        for t_aux in t_values:
+            Pto_x = (coor_ix * (1 - t_aux)**n +
+                     n * pc_x * (1 - t_aux) * t_aux +
+                     coor_fx * (t_aux)**n)
+            Pto_y = (coor_iy * (1 - t_aux)**n +
+                     n * pc_y * (1 - t_aux) * t_aux +
+                     coor_fy * (t_aux)**n)
+            ptos_x.append(Pto_x)
+            ptos_y.append(Pto_y)
+
+        for i in range(len(ptos_x) - 1):
+            dist_x.append(ptos_x[i+1] - ptos_x[i])
+            dist_y.append(ptos_y[i+1] - ptos_y[i])
+
+        return dist_x, dist_y
+
+        
+    
+        for i in range(len(ptos_x) - 1):
+            valor_actual = ptos_x[i]
+            suma = ptos_x[i+1] - ptos_x[i]
+            dist_x.append(suma)
+            valor_actual1 = ptos_y[i]
+            suma1 = ptos_y[i+1] - ptos_y[i]
+            dist_y.append(suma1)
+            
+        return dist_x, dist_y
 

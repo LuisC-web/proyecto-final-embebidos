@@ -5,8 +5,8 @@ export class AutoServices {
     try {
       const { data } = await api.post("/api/mover", {
         accion: "ir_a",
-        coor_fx: 20,
-        coor_fy: 0,
+        coor_fx: 30,
+        coor_fy: -5,
         n: 1,
         coor_ix: 0,
         coor_iy: 0,
@@ -20,8 +20,8 @@ export class AutoServices {
     try {
       const { data } = await api.post("/api/mover", {
         accion: "ir_a",
-        coor_fx: -20,
-        coor_fy: 0,
+        coor_fx: -15,
+        coor_fy: 2,
         n: 1,
         coor_ix: 0,
         coor_iy: 0,
@@ -95,8 +95,8 @@ export class AutoServices {
     try {
       const { data } = await api.post("/api/mover", {
         accion: "ir_a",
-        coor_fx: 5,
-        coor_fy: -35,
+        coor_fx: 0,
+        coor_fy: -50,
         n: 1,
         coor_ix: 0,
         coor_iy: 0,
@@ -110,8 +110,8 @@ export class AutoServices {
     try {
       const { data } = await api.post("/api/mover", {
         accion: "ir_a",
-        coor_fx: 5,
-        coor_fy: 35,
+        coor_fx: 0,
+        coor_fy: 40,
         n: 1,
         coor_ix: 0,
         coor_iy: 0,

@@ -27,8 +27,9 @@ function MovimientoCarro() {
   };
 
   return (
-    <div>
-      <div className="grid grid-cols-3 gap-4 grid-rows-3 text-white">
+    <div className="w-full">
+      <h2 className="text-2xl">Control carro</h2>
+      <div className="grid grid-cols-3 gap-4 grid-rows-3 text-white w-1/2">
         <MoveUpLeft
           className="size-10 col-start-1 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
           onMouseDown={() => iniciarMovimiento(AutoServices.avanzar_izquierda)}
@@ -83,6 +84,63 @@ function MovimientoCarro() {
           onMouseUp={() => detenerMovimiento(AutoServices.detener)}
           onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
         />
+      </div>
+      <h2 className="text-2xl">Control Brazo</h2>
+      <div className="flex">
+        <div className=" ">
+          <h3>Ante brazo</h3>
+          <div className="grid grid-cols-3 gap-4 grid-rows-3 text-white ">
+            <ArrowBigUp
+              className="size-10 col-start-2 row-start-1 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+              onMouseDown={() => iniciarMovimiento(AutoServices.mover_adelante)}
+              onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+              onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+            />
+
+            <ArrowBigDown
+              className="size-10 col-start-2 row-start-3 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+              onMouseDown={() => iniciarMovimiento(AutoServices.mover_atras)}
+              onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+              onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+            />
+          </div>
+        </div>
+        <div className="">
+          <h3>Hombro</h3>
+          <div className="grid grid-cols-3 gap-4 grid-rows-3 text-white">
+            <ArrowBigUp
+              className="size-10 col-start-2 row-start-1 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+              onMouseDown={() => iniciarMovimiento(AutoServices.mover_adelante)}
+              onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+              onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+            />
+            <ArrowBigDown
+              className="size-10 col-start-2 row-start-3 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+              onMouseDown={() => iniciarMovimiento(AutoServices.mover_atras)}
+              onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+              onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+            />
+          </div>
+        </div>
+        <div className="">
+          <h3>Base</h3>
+          <div className="grid grid-cols-3 gap-4 grid-rows-3 text-white">
+            <ArrowBigLeft
+              className="size-10 col-start-1 row-start-2 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+              onMouseDown={() =>
+                iniciarMovimiento(AutoServices.girar_izquierda)
+              }
+              onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+              onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+            />
+            <ArrowBigRight
+              className="size-10 col-start-3 row-start-2 cursor-pointer hover:bg-white/20 hover:scale-105 transition-all"
+              onMouseDown={() => iniciarMovimiento(AutoServices.girar_derecha)}
+              onMouseUp={() => detenerMovimiento(AutoServices.detener)}
+              onMouseLeave={() => detenerMovimiento(AutoServices.detener)}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

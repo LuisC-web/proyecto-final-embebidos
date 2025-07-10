@@ -221,15 +221,3 @@ class UtilsProject:
 
         return dist_x, dist_y
 
-        
-    
-        for i in range(len(ptos_x) - 1):
-            valor_actual = ptos_x[i]
-            suma = ptos_x[i+1] - ptos_x[i]
-            dist_x.append(suma)
-            valor_actual1 = ptos_y[i]
-            suma1 = ptos_y[i+1] - ptos_y[i]
-            dist_y.append(suma1)
-            
-        return dist_x, dist_y
-

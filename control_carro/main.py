@@ -9,15 +9,32 @@ from utils import UtilsProject
 # Para GP2 y GP3, puedes dejarlo así:
 OLED_SDA_PIN = 26
 OLED_SCL_PIN = 27
-# Si quisieras usar otros pines, por ejemplo, GP4 y GP5, lo harías así:
-# OLED_SDA_PIN = 4
-# OLED_SCL_PIN = 5
-# -----------------------------------------------
+modo_prueba = False
 
-# --- Parámetros de modo prueba ---
-modo_prueba = False  # True ejecuta prueba, luego pasa a modo normal
+# Variable global simple
+oled_ok = False
 
-# JSON de prueba para modo_prueba (estructura Carro_1)
+def try_oled_operation(operation):
+    """Ejecuta operación OLED y retorna si fue exitosa"""
+    global oled_ok
+    try:
+        operation()
+        oled_ok = True
+        return True
+    except:
+        oled_ok = False
+        return False
+
+def init_oled():
+    """Inicializa OLED una sola vez"""
+    global oled
+    try:
+        oled = MyOLED(sda_pin=OLED_SDA_PIN, scl_pin=OLED_SCL_PIN)
+        return True
+    except:
+        return False
+
+# TEST JSON
 TEST_JSON = json.dumps({
     "Carro_1": {
         "Paso_1": {"Movimiento": {"distancia_mm": 1000, "velocidad_mm_s": 1000, "radio_mm": "inf"},
@@ -26,32 +43,29 @@ TEST_JSON = json.dumps({
                    "Brazo":    {"angulo0_grados":-90,   "angulo1_grados": 90,   "angulo2_grados": -90}},
     }
 })
-# Inicializa la pantalla OLED pasando los pines que has definido.
-oled = MyOLED(sda_pin=OLED_SDA_PIN, scl_pin=OLED_SCL_PIN)
-
-#-----------------
-
-
-## Programa Principal Actualizado: Escucha Continua de Comandos
 
 if __name__ == "__main__":
-    # Inicializar hardware
+    # Inicializar hardware crítico PRIMERO
     motors_controller = MotorController()
     arm_controller = BrazoRobotico()
-    tiempo_ultima_actualizacion = time.ticks_ms()
     functions = UtilsProject()
+    
+    # Intentar OLED (si falla, continúa sin ella)
+    oled = None
+    init_oled()
+    
+    # Modo prueba
     while modo_prueba:
-        print("🚀 MODO PRUEBA ACTIVADO: ejecutando TEST_JSON")
-        oled.write_text("MODO PRUEBA", 0, 0)
+        print("🚀 MODO PRUEBA ACTIVADO")
+        try_oled_operation(lambda: oled.write_text("MODO PRUEBA", 0, 0))
+        
         pasos_prueba = functions.parsear_comando(TEST_JSON) 
         if pasos_prueba:
             for i, cmd in enumerate(pasos_prueba, start=1):
                 print(f"[Prueba] Paso {i}: {cmd}")
-                # Movimiento de brazo si aplica
                 if cmd.get("angulos"):
                     arm_controller.mover_brazo(cmd["angulos"], cmd.get("t_ser", 1.0))
                     time.sleep(cmd.get("t_ser", 1.0))
-                # Movimiento del rover: convertir mm a cm
                 distancia_cm = cmd["distancia_abs"] / 10.0
                 if cmd["tipo"] == "recto":
                     motors_controller.mover_adelante(distancia_cm)
@@ -62,74 +76,76 @@ if __name__ == "__main__":
                         motors_controller.girar_derecha(cmd["angulo"])
                     motors_controller.mover_adelante(distancia_cm)
             motors_controller.detener()
-            oled.write_text("Fin prueba", 0, 20)
+            try_oled_operation(lambda: oled.write_text("Fin prueba", 0, 20))
             print("✅ Modo prueba completado")
-        else:
-            print("ERROR: parsear_comando TEST_JSON devolvió None")
-    # Buffer de comandos (cola FIFO)
+        modo_prueba = False
+    
+    # Variables del programa principal
     cola_comandos = []
     DIST_CRITICA = 10
+    oled_retry_counter = 0
 
+    # CICLO PRINCIPAL ULTRA-SIMPLE
     while True:
-        oled.write_text("Proyecto final:3", 0, 0)
+        # Cada 50 ciclos, intentar reconectar OLED si falló
+        oled_retry_counter += 1
+        if oled_retry_counter > 50 and not oled_ok:
+            oled_retry_counter = 0
+            init_oled()
 
-        # 📥 Leer mensaje UART si existe
+        # Mostrar estado (con lambda para evitar errores)
+        try_oled_operation(lambda: oled.write_text("Proyecto final:3", 0, 0))
+
+        # LÓGICA PRINCIPAL (sin dependencias de OLED)
         msg = functions.recibir_uart()
-        ultra_sonido_distancia=functions.medir_distancia_cm()
+        ultra_sonido_distancia = functions.medir_distancia_cm()
         
         if ultra_sonido_distancia is not None:
             if ultra_sonido_distancia < DIST_CRITICA:
-                # Gira a la derecha hasta que esté a salvo
-                motors_controller.girar_derecha(30)  # ajusta velocidad/ángulo
-                try:
-                    oled.write_text(f"🚨 Obstáculo {dist:.1f}cm", 0, 20)
-                except:
-                    pass
+                motors_controller.girar_derecha(30)
+                try_oled_operation(lambda: [
+                    oled.clear(),
+                    oled.write_text("Proyecto final:3", 0, 0),
+                    oled.write_text(f"🚨 Obstáculo {ultra_sonido_distancia:.1f}cm", 0, 20)
+                ])
                 time.sleep(0.1)
-                continue  # Salta al próximo ciclo
+                continue
             else:
                 motors_controller.detener()
-            
         
-        if msg:
+        if msg: 
             accion = msg.get("accion")
-            # 🛑 Detener todo: vaciar buffer y cortar movimiento
             if accion == "detener":
                 cola_comandos.clear()
                 motors_controller.detener()
                 if hasattr(arm_controller, "detener"):
                     try:
                         arm_controller.detener()
-                    except Exception:
+                    except:
                         pass
-                try:
+                try_oled_operation(lambda: [
+                    oled.clear(),
+                    oled.write_text("Proyecto final:3", 0, 0),
                     oled.write_text("⚠️ DETENER!", 0, 20)
-                except Exception as e:
-                    print("OLED error (detener):", e)
-                # Saltar al inicio del bucle
+                ])
                 time.sleep(0.05)
                 continue
             
-            # Si no es detener, agregar al buffer
             cola_comandos.append(msg)
 
-        # 🔄 Procesar próximo comando si existe
         if cola_comandos:
             prox = cola_comandos.pop(0)
-            # Mostrar en OLED de forma segura
-            try:
-                oled.write_text("Ejecutando:", 0, 10)
-                oled.write_text(prox.get("accion", ""), 0, 20)
-                if prox.get("ip"):
-                   oled.write_text(prox.get("ip", ""), 0, 50) 
-            except Exception as e:
-                print("OLED error (ejecución):", e)
+            try_oled_operation(lambda: [
+                oled.clear(),
+                oled.write_text("Ejecutando:", 0, 10),
+                oled.write_text(prox.get("accion", ""), 0, 20),
+                oled.write_text(prox.get("ip", ""), 0, 50) if prox.get("ip") else None
+            ])
             
-            # Ejecutar comando con seguridad
             try:
                 functions.parsear_json_uart(prox, motors_controller, arm_controller)
             except Exception as e:
-                print("Error ejecutando comando:", prox, e)
+                print(f"Error ejecutando comando: {prox}, {e}")
 
-        # Pequeña pausa para no saturar el CPU
         time.sleep(0.05)
+

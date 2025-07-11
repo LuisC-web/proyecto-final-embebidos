@@ -164,6 +164,22 @@ class UtilsProject:
             angulos = received.get("angulos", [90, 90, 90])
             tiempo = received.get("tiempo_s", 1.0)
             brazo_robotico.mover_brazo(angulos, tiempo)
+        
+        # NUEVO: Soporte para movimientos relativos del brazo
+        elif received.get("accion") == "brazo_relativo":
+            desplazamientos = received.get("desplazamientos", [0, 0, 0])
+            tiempo = received.get("tiempo_s", 1.0)
+            brazo_robotico.mover_brazo_relativo(desplazamientos, tiempo)
+        
+        # NUEVO: Obtener posición actual del brazo
+        elif received.get("accion") == "brazo_estado":
+            posicion = brazo_robotico.obtener_posicion_actual()
+            respuesta = {
+                "tipo": "estado_brazo",
+                "angulos_actuales": posicion,
+                "timestamp": time.time()
+            }
+            self.enviar_uart(json.dumps(respuesta))
 
         elif received.get("accion") == "ir_a":
             x0 = received.get("coor_ix", 0)
@@ -174,7 +190,6 @@ class UtilsProject:
 
             dxs, dys = self.bezier(x0, y0, xf, yf, n)
             for dx, dy in zip(dxs, dys):
-                # cada segmento es relativo
                 if dx > 0:
                     motor_controller.mover_adelante(abs(dx))
                 elif dx < 0:

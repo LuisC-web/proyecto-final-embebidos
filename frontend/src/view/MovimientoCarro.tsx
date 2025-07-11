@@ -1,4 +1,4 @@
-import Joystick from "../components/joystick";
+import Joystick from "../components/Joystick";
 import { AutoServices } from "../services/AutoServices";
 import { useState, useRef } from "react";
 
@@ -10,7 +10,7 @@ interface JoystickValue {
 
 function MovimientoCarro() {
   const [isExecuting, setIsExecuting] = useState(false);
-  const [joystickData, setJoystickData] = useState<JoystickValue | null>(null);
+  // Eliminado joystickData porque no se usa
 
   // Estados para cada componente del brazo
   const [isBaseExecuting, setIsBaseExecuting] = useState(false);
@@ -27,10 +27,10 @@ function MovimientoCarro() {
   const brazoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hombroTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const HOLD_TIME = 10;
+  const HOLD_TIME = 50;
 
   const changeCarro = async (val: JoystickValue) => {
-    setJoystickData(val);
+    // Eliminado setJoystickData porque no se usa
 
     if (carroTimerRef.current) {
       clearTimeout(carroTimerRef.current);
@@ -38,7 +38,6 @@ function MovimientoCarro() {
     }
 
     if (val.direction === "Center") {
-      setJoystickData(null);
       await AutoServices.detener();
       return;
     }
@@ -48,12 +47,12 @@ function MovimientoCarro() {
         if (!isExecuting) {
           setIsExecuting(true);
 
-          let radio = 20 * val.distance;
-          let radianes = (val.angle! * Math.PI) / 180;
-          let cosAngulo = Math.cos(radianes);
-          let senAngulo = Math.sin(radianes);
-          let coodernadaY = Math.round(cosAngulo * radio);
-          let coodernadaX = Math.round(senAngulo * radio);
+          const radio = 10 * val.distance;
+          const radianes = (val.angle! * Math.PI) / 180;
+          const cosAngulo = Math.cos(radianes);
+          const senAngulo = Math.sin(radianes);
+          const coodernadaY = Math.round(cosAngulo * radio);
+          const coodernadaX = Math.round(senAngulo * radio);
           console.log("Coordanada x-y", coodernadaX, coodernadaY);
 
           await AutoServices.mover_carro({ dx: coodernadaX, dy: coodernadaY });
@@ -82,12 +81,12 @@ function MovimientoCarro() {
         if (!isBaseExecuting) {
           setIsBaseExecuting(true);
 
-          let intensidad = 20 * val.distance;
-          let radianes = (val.angle! * Math.PI) / 180;
-          let senAngulo = Math.cos(radianes);
+          const intensidad = 10 * val.distance;
+          const radianes = (val.angle! * Math.PI) / 180;
+          const senAngulo = Math.cos(radianes);
 
           // Solo controla la base (rotación horizontal)
-          let angulo_base = Math.round(senAngulo * intensidad);
+          const angulo_base = Math.round(senAngulo * intensidad);
 
           await AutoServices.mover_brazo({
             angulo_base,
@@ -119,12 +118,12 @@ function MovimientoCarro() {
         if (!isBrazoExecuting) {
           setIsBrazoExecuting(true);
 
-          let intensidad = 20 * val.distance;
-          let radianes = (val.angle! * Math.PI) / 180;
-          let cosAngulo = Math.sin(radianes);
+          const intensidad = 20 * val.distance;
+          const radianes = (val.angle! * Math.PI) / 180;
+          const cosAngulo = Math.sin(radianes);
 
           // Solo controla el brazo (elevación/extensión)
-          let angulos_brazo = Math.round(cosAngulo * intensidad);
+          const angulos_brazo = Math.round(cosAngulo * intensidad);
           console.log(angulos_brazo);
           await AutoServices.mover_brazo({
             angulo_base: 0,
@@ -157,12 +156,12 @@ function MovimientoCarro() {
         if (!isHombroExecuting) {
           setIsHombroExecuting(true);
 
-          let intensidad = 20 * val.distance;
-          let radianes = (val.angle! * Math.PI) / 180;
-          let senAngulo = Math.sin(radianes);
+          const intensidad = 20 * val.distance;
+          const radianes = (val.angle! * Math.PI) / 180;
+          const senAngulo = Math.sin(radianes);
 
           // Solo controla el hombro
-          let angulo_hombro = Math.round(senAngulo * intensidad);
+          const angulo_hombro = Math.round(senAngulo * intensidad);
 
           await AutoServices.mover_brazo({
             angulo_base: 0,
@@ -329,7 +328,7 @@ function MovimientoCarro() {
           <div>
             <h4 className="font-semibold">🚗 Carro:</h4>
             <ul className="text-sm space-y-1">
-              <li>• Joystick grande para movimiento completo</li>
+              <li>• Joystick grande para movimiento compconsto</li>
               <li>• Todas las direcciones disponibles</li>
             </ul>
           </div>

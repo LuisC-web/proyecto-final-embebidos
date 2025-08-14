@@ -85,7 +85,7 @@ npm install
 echo "REACT_APP_API_URL=http://192.168.1.100:5000" > .env
 
 # Iniciar desarrollo
-npm start
+npm run dev
 ```
 
 ### **Backend (Raspberry Pi Pico W)**
